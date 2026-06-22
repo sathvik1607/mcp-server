@@ -1,0 +1,25 @@
+# Environment & secrets — NEVER commit these
+.env
+*.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Local logs — stored in DB on Render
+query_run_log.jsonl
+
+# Generated Excel files
+*.xlsx
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

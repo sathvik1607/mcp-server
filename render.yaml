@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: allpets-mcp
+    runtime: python
+    plan: starter          # always-on, no cold start sleep ($7/month)
+    region: singapore      # closest to AWS RDS ap-south-1
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    healthCheckPath: /health
+
+    envVars:
+      # Set these manually in the Render dashboard (sync: false = secret)
+      - key: MCP_SECRET_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+
+      # Non-secret defaults
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_NAME
+        value: cohort_main
+      - key: EXCEL_OUTPUT_DIR
+        value: /tmp
