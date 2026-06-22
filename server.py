@@ -92,8 +92,7 @@ if __name__ == "__main__":
         from mcp.shared.auth import OAuthToken
         from pydantic import AnyHttpUrl as _AnyHttpUrl, TypeAdapter as _TypeAdapter
         _url = _TypeAdapter(_AnyHttpUrl).validate_python
-        from starlette.applications import Starlette
-        from starlette.routing import Route, Mount
+        from starlette.routing import Route
         from starlette.requests import Request
         from starlette.responses import HTMLResponse, RedirectResponse, Response
 
@@ -289,31 +288,24 @@ if __name__ == "__main__":
         analytics_tools.register(mcp_render)
         report_tools.register(mcp_render)
 
-        # base_app already includes:
-        #   /.well-known/oauth-authorization-server   (public)
-        #   /.well-known/oauth-protected-resource     (public)
-        #   /register                                 (public)
-        #   /authorize                                (public)
-        #   /token                                    (public)
-        #   /mcp                                      (requires Bearer token)
+        # base_app has a lifespan that starts the StreamableHTTPSessionManager.
+        # We must NOT wrap it in an outer Starlette app — Mount() doesn't propagate
+        # the inner app's lifespan, which breaks /mcp entirely.
+        # Instead, inject the extra routes directly into base_app's router.
         base_app = mcp_render.streamable_http_app()
 
         async def health(request: Request) -> Response:
             return PlainTextResponse("OK")
 
-        outer_app = Starlette(
-            routes=[
-                Route("/auth/consent",
-                      endpoint=_make_consent_handler(oauth_provider),
-                      methods=["GET", "POST"]),
-                Route("/health", endpoint=health, methods=["GET"]),
-                Mount("/", app=base_app),
-            ]
-        )
-        outer_app.add_middleware(DiagnosticMiddleware)
+        # Prepend so they are checked before FastMCP's own routes
+        base_app.router.routes.insert(0, Route("/health", endpoint=health, methods=["GET"]))
+        base_app.router.routes.insert(0, Route("/auth/consent",
+                                               endpoint=_make_consent_handler(oauth_provider),
+                                               methods=["GET", "POST"]))
+        base_app.add_middleware(DiagnosticMiddleware)
 
         print(f"Starting AllPets MCP on port {port} (HTTP + OAuth 2.0)")
-        uvicorn.run(outer_app, host="0.0.0.0", port=port)
+        uvicorn.run(base_app, host="0.0.0.0", port=port)
 
     # ── Local dev (stdio) ──────────────────────────────────────────────────────
     else:
