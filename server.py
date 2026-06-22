@@ -29,10 +29,8 @@ builtins.print = _stderr_print
 import config  # MUST be the very first import — injects sys.path + loads .env
 
 from mcp.server.fastmcp import FastMCP
-from starlette.applications import Starlette
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response, PlainTextResponse
-from starlette.routing import Route, Mount
 
 from tools import dashboard as dashboard_tools
 from tools import analytics as analytics_tools
@@ -71,23 +69,16 @@ if __name__ == "__main__":
 
         class BearerAuthMiddleware(BaseHTTPMiddleware):
             async def dispatch(self, request, call_next):
-                # Allow health checks through without auth
+                # Health check — return directly without forwarding
                 if request.url.path == "/health":
-                    return await call_next(request)
+                    return PlainTextResponse("OK")
                 if SECRET_TOKEN:
                     auth = request.headers.get("Authorization", "")
                     if not auth.startswith("Bearer ") or auth[7:] != SECRET_TOKEN:
                         return Response("Unauthorized", status_code=401)
                 return await call_next(request)
 
-        async def health(request):
-            return PlainTextResponse("OK")
-
-        mcp_asgi = mcp.streamable_http_app()
-        app = Starlette(routes=[
-            Route("/health", health),
-            Mount("/", mcp_asgi),
-        ])
+        app = mcp.streamable_http_app()
         app.add_middleware(BearerAuthMiddleware)
 
         port = int(os.getenv("PORT", 8000))
