@@ -31,7 +31,7 @@ import config  # MUST be the very first import — injects sys.path + loads .env
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response, PlainTextResponse
+from starlette.responses import Response, PlainTextResponse  # noqa: F401
 
 from tools import dashboard as dashboard_tools
 from tools import analytics as analytics_tools
@@ -39,11 +39,9 @@ from tools import reports   as report_tools
 
 mcp = FastMCP(
     name="allpets",
-    transport_security=TransportSecuritySettings(
-        enable_dns_rebinding_protection=True,
-        allowed_hosts=["mcp-server-sjse.onrender.com"],
-        allowed_origins=["https://mcp-server-sjse.onrender.com"],
-    ),
+    # ── TRANSPORT SECURITY DISABLED FOR TESTING ──────────────────
+    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+    # ─────────────────────────────────────────────────────────────
     instructions=(
         "You are connected to AllPets Clinic & Beyond's analytics platform. "
         "When the user says 'this week' without specifying dates, call "
@@ -75,13 +73,14 @@ if __name__ == "__main__":
 
         class BearerAuthMiddleware(BaseHTTPMiddleware):
             async def dispatch(self, request, call_next):
-                # Health check — return directly without forwarding
                 if request.url.path == "/health":
                     return PlainTextResponse("OK")
-                if SECRET_TOKEN:
-                    auth = request.headers.get("Authorization", "")
-                    if not auth.startswith("Bearer ") or auth[7:] != SECRET_TOKEN:
-                        return Response("Unauthorized", status_code=401)
+                # ── AUTH DISABLED FOR TESTING ──────────────────────
+                # if SECRET_TOKEN:
+                #     auth = request.headers.get("Authorization", "")
+                #     if not auth.startswith("Bearer ") or auth[7:] != SECRET_TOKEN:
+                #         return Response("Unauthorized", status_code=401)
+                # ───────────────────────────────────────────────────
                 return await call_next(request)
 
         app = mcp.streamable_http_app()
