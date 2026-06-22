@@ -74,10 +74,21 @@ if __name__ == "__main__":
 
         SECRET_TOKEN = os.getenv("MCP_SECRET_TOKEN", "")
 
+        PUBLIC_PATHS = {
+            "/health",
+            "/.well-known/oauth-authorization-server",
+            "/.well-known/oauth-protected-resource",
+            "/register",
+            "/authorize",
+            "/token",
+        }
+
         class BearerAuthMiddleware(BaseHTTPMiddleware):
             async def dispatch(self, request, call_next):
                 if request.url.path == "/health":
                     return PlainTextResponse("OK")
+                if request.url.path in PUBLIC_PATHS:
+                    return await call_next(request)
                 if SECRET_TOKEN:
                     auth = request.headers.get("Authorization", "")
                     if not auth.startswith("Bearer ") or auth[7:] != SECRET_TOKEN:
