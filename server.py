@@ -29,6 +29,7 @@ builtins.print = _stderr_print
 import config  # MUST be the very first import — injects sys.path + loads .env
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response, PlainTextResponse
 
@@ -38,6 +39,11 @@ from tools import reports   as report_tools
 
 mcp = FastMCP(
     name="allpets",
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=["mcp-server-sjse.onrender.com"],
+        allowed_origins=["https://mcp-server-sjse.onrender.com"],
+    ),
     instructions=(
         "You are connected to AllPets Clinic & Beyond's analytics platform. "
         "When the user says 'this week' without specifying dates, call "
