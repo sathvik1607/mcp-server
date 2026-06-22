@@ -84,8 +84,25 @@ if __name__ == "__main__":
                         return Response("Unauthorized", status_code=401)
                 return await call_next(request)
 
+        class DiagnosticMiddleware(BaseHTTPMiddleware):
+            async def dispatch(self, request, call_next):
+                import logging
+                log = logging.getLogger("mcp.diagnostic")
+                log.warning(
+                    "REQUEST %s %s | Accept: %s | Content-Type: %s | Origin: %s | Host: %s",
+                    request.method, request.url.path,
+                    request.headers.get("accept", "-"),
+                    request.headers.get("content-type", "-"),
+                    request.headers.get("origin", "-"),
+                    request.headers.get("host", "-"),
+                )
+                response = await call_next(request)
+                log.warning("RESPONSE %s %s → %s", request.method, request.url.path, response.status_code)
+                return response
+
         app = mcp.streamable_http_app()
         app.add_middleware(BearerAuthMiddleware)
+        app.add_middleware(DiagnosticMiddleware)
 
         port = int(os.getenv("PORT", 8000))
         print(f"Starting AllPets MCP on port {port} (HTTP + bearer auth)")
