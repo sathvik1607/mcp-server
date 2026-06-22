@@ -39,6 +39,7 @@ from tools import reports   as report_tools
 
 mcp = FastMCP(
     name="allpets",
+    json_response=True,
     transport_security=TransportSecuritySettings(
         enable_dns_rebinding_protection=True,
         allowed_hosts=["mcp-server-sjse.onrender.com"],
