@@ -92,9 +92,10 @@ if __name__ == "__main__":
         from mcp.shared.auth import OAuthToken
         from pydantic import AnyHttpUrl as _AnyHttpUrl, TypeAdapter as _TypeAdapter
         _url = _TypeAdapter(_AnyHttpUrl).validate_python
+        import re as _re
         from starlette.routing import Route
         from starlette.requests import Request
-        from starlette.responses import HTMLResponse, RedirectResponse, Response
+        from starlette.responses import HTMLResponse, RedirectResponse, Response, FileResponse
 
         SECRET_TOKEN = os.getenv("MCP_SECRET_TOKEN", "")
         BASE_URL = "https://mcp-server-sjse.onrender.com"
@@ -297,8 +298,22 @@ if __name__ == "__main__":
         async def health(request: Request) -> Response:
             return PlainTextResponse("OK")
 
+        async def download_file(request: Request) -> Response:
+            file_id = request.path_params.get("file_id", "")
+            if not _re.fullmatch(r"[a-f0-9]{32}", file_id):
+                return Response("Not found", status_code=404)
+            tmp_path = f"/tmp/{file_id}.xlsx"
+            if not os.path.exists(tmp_path):
+                return Response("File not found or expired", status_code=404)
+            return FileResponse(
+                tmp_path,
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                filename=f"allpets_report.xlsx",
+            )
+
         # Prepend so they are checked before FastMCP's own routes
         base_app.router.routes.insert(0, Route("/health", endpoint=health, methods=["GET"]))
+        base_app.router.routes.insert(0, Route("/download/{file_id}", endpoint=download_file, methods=["GET"]))
         base_app.router.routes.insert(0, Route("/auth/consent",
                                                endpoint=_make_consent_handler(oauth_provider),
                                                methods=["GET", "POST"]))
