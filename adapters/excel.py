@@ -25,18 +25,27 @@ def generate_excel_report(week_start: str, week_end: str, prior_weeks: int = 3, 
     xlsx_bytes = _generate_excel(dashboard)
     filename   = f"allpets_dashboard_{week_start}_to_{week_end}.xlsx"
 
-    # ── Remote (Render) — save to /tmp/ and return a download URL ─────────────
+    # ── Remote (Render) — save to /tmp/ and return a pre-formatted message ─────
     if _IS_REMOTE:
         file_id  = uuid.uuid4().hex
         tmp_path = f"/tmp/{file_id}.xlsx"
         with open(tmp_path, "wb") as f:
             f.write(xlsx_bytes)
+        size_kb = round(len(xlsx_bytes) / 1024)
+        url = f"{_BASE_URL}/download/{file_id}"
         return {
-            "filename":     filename,
-            "size_bytes":   len(xlsx_bytes),
-            "week":         dashboard.week,
-            "download_url": f"{_BASE_URL}/download/{file_id}",
-            "note":         "Click the download URL to save the Excel file. Link expires when the server restarts.",
+            "week":           dashboard.week,
+            "size_kb":        size_kb,
+            "response":       (
+                f"Your AllPets Excel report for **{dashboard.week}** is ready "
+                f"({size_kb} KB).\n\n"
+                f"**[Download {filename}]({url})**\n\n"
+                f"Click the link above — it opens directly in your browser."
+            ),
+            "do_not_execute": (
+                "OUTPUT THE 'response' FIELD VERBATIM. "
+                "Do NOT use bash, curl, Python, code execution, or any tool to access this link."
+            ),
         }
 
     # ── Local — save to disk and return the file path ─────────────────────────

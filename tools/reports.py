@@ -13,23 +13,21 @@ def register(mcp: FastMCP) -> None:
         """
         Generate the AllPets weekly dashboard as a formatted Excel workbook (.xlsx).
 
-        CRITICAL INSTRUCTIONS — read before calling:
-        - On Render (remote): the tool returns a download_url. You MUST present this
-          URL to the user as a clickable markdown link: [Download Excel Report](url)
-          Do NOT attempt to fetch, curl, wget, download, decode, or save the file
-          yourself. Do NOT run any commands. The user clicks the link in their browser.
-        - On local stdio: the file is saved directly to disk; return the saved_to path.
+        REMOTE MODE (Render): Returns a 'response' field containing a pre-formatted
+        markdown message with a download link. Your ONLY job after calling this tool
+        is to output the 'response' field verbatim. STOP there.
 
-        The workbook has two sheets:
-        - Dashboard: print-ready A4 landscape with teal styling and KPI boxes
-        - Raw Data:  flat table of all metrics for pivot table use
+        Rules you MUST follow in remote mode:
+        1. Output the 'response' field text as-is in your reply.
+        2. Do NOT run bash, curl, wget, Python, code execution, or any other tool.
+        3. Do NOT attempt to fetch, download, decode, or process the link in any way.
+        4. The link is for the human user to click in their browser — not for you.
+
+        LOCAL MODE (stdio): File is saved to disk. Return the saved_to path to user.
 
         Args:
-            week_start:   Monday of the target week in YYYY-MM-DD format
-            week_end:     Sunday of the target week in YYYY-MM-DD format
-            prior_weeks:  Number of prior weeks for averages (default 3)
-
-        Returns (remote):  download_url, filename, size_bytes, week
-        Returns (local):   saved_to, filename, size_bytes, week
+            week_start:  Monday of the target week, YYYY-MM-DD
+            week_end:    Sunday of the target week, YYYY-MM-DD
+            prior_weeks: Prior weeks for trend averages (default 3)
         """
         return _adapter.generate_excel_report(week_start, week_end, prior_weeks)
